@@ -33,6 +33,19 @@ class RegisterRequest extends FormRequest
         ];
     }
 
+    public function messages (){
+
+       return [
+
+        "name.required"=> "Név elvárt!",
+        "name.min"=> "A név túl rövid!",
+        "name.max"=> "A név túl hosszú!",
+        "name.unique"=> "A név már létezik!",
+        "password.regex"=>"Nem megfelelő jelszó!"
+
+       ];
+    }
+
     public function failedValidation (Validator $validator) {
 
         throw new HttpResponseException (response ()->json ([
