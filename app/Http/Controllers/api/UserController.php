@@ -19,6 +19,7 @@ class UserController extends ResponseController
             "name"=>$request ["name"],
             "email"=>$request ["email"],
             "password"=>bcrypt ($request ["password"]),
+            "admin"=>$request["admin"]
         ]);
 
         return $user;
@@ -42,6 +43,11 @@ class UserController extends ResponseController
     }
 
     public function logout(){
+
+       $user=auth("sanctum")->user();
+       $user->currentAccessToken()->delete();
+       
+       return $this->sendResponse($user->name, "Sikeres kijelentkezés!");
 
     }
 
