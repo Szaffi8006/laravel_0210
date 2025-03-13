@@ -8,6 +8,8 @@ use App\Models\User;
 use App\Http\Requests\RegisterRequest;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\api\ResponseController;
+use App\Http\Controllers\api\BannerController;
+use Carbon\Carbon;
 
 class UserController extends ResponseController
 {
@@ -25,33 +27,63 @@ class UserController extends ResponseController
         return $user;
     }
 
-    public function login(Request $request){
+    public function login( Request $request ) {
 
         //$request->validated();
 
-        if (Auth::attempt(["name"=>$request["name"], "password"=>$request["password"]])){
+        if( Auth::attempt([ "name" => $request[ "name"], "password" => $request[ "password" ] ])) {
 
-        $authUser = Auth::user();
-        $token = $authUser->createToken($authUser->name."token")->plainTextToken;
-        $data = [
-            "name"=> $authUser->name,
-            "token"=> $token
-        ];
+            $authUser = Auth::user();
+            ( new BannerController )->resetLoginCounter( $authUser->name );
+            $bannedTime = ( new BannerController )->getBannedTime( $authUser->name );
 
-        return $this->sendResponse($data, "Sikeres bejelentkezés!");  
+            if( $bannedTime < Carbon::now() ) {
+
+                ( new BannerController )->resetBannedTime( $authUser->name );
+                //$token = $authUser->createToken( $authUser->name."token" )->plainTextToken;
+                $data = [
+                    "name" => $authUser->name,
+                    //"token" => $token
+                ];
+
+                return $this->sendResponse( $data, "Sikeres bejelelntkezés" );
+
+            }else {
+
+                $errormessage = [ "message" => "Következő lehetőség:", "time" => $bannedTime ];
+
+                return $this->sendError( "Belépési korlátozás!", [ $errormessage ], 401 );
+            }
+
+        }else {
+
+            $counter = ( new BannerController )->getLoginCounter( $request[ "name" ]);
+            if( $counter < 3 ) {
+
+                ( new BannerController )->setLoginCounter( $request[ "name" ]);
+                return $this->sendError( "Autencikációs hiba", "Hibás felhasználónév vagy jelszó", 401 );
+
+            }else {
+
+                ( new BannerController )->setBannedTime( $request[ "name" ]);
+                $bannedTime = ( new BannerController )->getBannedTime( $request[ "name" ]);
+
+                $errormessage = [ "message" => "Következő lehetőség:", "time" => $bannedTime ];
+
+                return $this->sendError( "Autentikációs hiba", [ $errormessage ], 401 );
+            }
+
+
         }
     }
 
-    public function logout(){
+    public function logout() {
 
-       $user=auth("sanctum")->user();
-       $user->currentAccessToken()->delete();
-       
-       return $this->sendResponse($user->name, "Sikeres kijelentkezés!");
+        $user = auth( "sanctum" )->user();
+        $user->currentAccessToken()->delete();
 
+        return $this->sendResponse( $user->name, "Sikeres kijelentkezés" );
     }
-
 }
-
 
     
