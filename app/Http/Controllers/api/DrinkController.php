@@ -11,8 +11,8 @@ use Illuminate\Support\Facades\Gate;
 
 class DrinkController extends ResponseController {
 
-    public function getDrinks() {
-
+    public function getDrinks() 
+    {
         $drinks = Drink::with( "type", "package" )->get();
 
         return $this->sendResponse( DrinkResource::collection( $drinks ), "Betöltve" );
@@ -31,8 +31,8 @@ class DrinkController extends ResponseController {
         Gate::before(function($user){
             if ($user->admin ==2){
             
-            return true;
-        }
+                return true;
+            }
        });
         
         if (!Gate::allows("admin")){
